@@ -1,0 +1,113 @@
+The Nautilus development team had a discussion with the DevOps team and they want to deploy a Jekyll app on Kubernetes cluster. 
+They have already shared details with the DevOps team, please find more details below:
+
+
+Create a namespace jekyll-namespace-nautilus for jekyll.
+
+PersistentVolume is already created on jump_host.
+
+Create a PersistentVolumeClaim which should be named jekyll-site-nautilus under the same namespace. 
+accessModes should be ReadWriteMany, request 1Gi storage.
+
+Create a pod named jekyll-pod-nautilus for jekyll. 
+
+Init container should be named as jekyll-init-nautilus, image should be kodekloud/jekyll, use command as [ "jekyll", "new", "/site" ]. 
+Its image pull policy should be IfNotPresent, volumeMount name should be site and its mountPath should be /site. 
+
+The main container should be named as jekyll-container-nautilus, its image should be kodekloud/jekyll-serve, 
+volumeMount name should be site and its mountPath should be /site. 
+
+Volume name should be site and persistent volume claim's claim name should be jekyll-site-nautilus
+
+Create a service for jekyll which should be named jekyll-service-nautilus under the same namespace. 
+Port should be 8080, protocol should be TCP, its targetPort should be 4000 and nodePort should be 31181. 
+Its type should be NodePort and loadbalancer status should be {}.
+
+You can use any labels as per your choice.
+
+Note: The kubectl on jump_host has been configured to work with the kubernetes cluster.
+
+
+kubectl create namespace jekyll-namespace-nautilus
+kubectl config set-context --current --namespace=jekyll-namespace-nautilus
+
+kubectl taint nodes --all node-role.kubernetes.io/master-
+  
+
+You have to fix an issue 'already existed PV and bond it forcefully with PVC', which is mentioned in below step 1
+# Step 1: Edit already existed PV and bond it forcefully with PVC
+#         kubectl edit pv/jekyll-site-xxxxx
+#         Add below under spec:
+#         claimRef:
+#             name: jekyll-site-xxxxx
+#             namespace: jekyll-namespace-xxxxx
+# Step 2: kubectl create namespace jekyll-namespace-nautilus
+# Step 3: kubectl create -f <file-name>
+# Step 4: Pod should be in Running state
+# Step 5: Verification:
+#           Open Jekyll app on browser by clicking 'Open Port on Host 1'
+#           Use NodePort below. You should see the page without any error
+#
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jekyll-site-nautilus
+  namespace: jekyll-namespace-nautilus
+spec:
+  storageClassName: ""
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: jekyll-pod-nautilus
+  namespace: jekyll-namespace-nautilus
+  labels:
+    app: jykll
+spec:
+  volumes:
+  - name: site
+    persistentVolumeClaim:
+      claimName: jekyll-site-nautilus
+
+  initContainers:
+    - name: jekyll-init-nautilus
+      image: kodekloud/jekyll
+      imagePullPolicy: IfNotPresent
+      command: ["jekyll", "new", "/site"]
+      volumeMounts:
+        - name: site
+          mountPath: /site
+
+  containers:
+    - name: jekyll-container-nautilus
+      image: kodekloud/jekyll-serve
+      volumeMounts:
+        - name: site
+          mountPath: /site
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jekyll-service-nautilus
+  namespace: jekyll-namespace-nautilus
+  labels:
+    app: jykll
+spec:
+  selector:
+    app: jykll
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 4000
+      nodePort: 31181
+      protocol: TCP
+status:
+  loadBalancer: {}
