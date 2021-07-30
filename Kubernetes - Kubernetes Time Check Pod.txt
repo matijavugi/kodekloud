@@ -25,9 +25,9 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: time-config
-  namespace: nautilus
+  namespace: xfusion
 data:
-  TIME_FREQ: '4'
+  TIME_FREQ: '7'
   
 
 vi pod.yaml
@@ -36,21 +36,21 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: time-check
-  namespace: nautilus
+  namespace: xfusion
 spec:
   containers:
     - name: time-check
       image: busybox:latest
-      command: [ "/bin/sh", "-c", "while true; do date; sleep $(TIME_FREQ);done >> /opt/dba/time/time-check.log" ]
+      command: [ "/bin/sh", "-c", "while true; do date; sleep $(TIME_FREQ);done >> /opt/security/time/time-check.log" ]
+      envFrom:
+      - configMapRef:
+          name: time-config
       volumeMounts:
       - name: log-volume
-        mountPath: /opt/dba/time
+        mountPath: /opt/security/time
   volumes:
     - name: log-volume
-      configMap:
-        # Provide the name of the ConfigMap containing the files you want
-        # to add to the container
-        name: time-config
-  restartPolicy: Never
+      emptyDir: {}
+
   
   
