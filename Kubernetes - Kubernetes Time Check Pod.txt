@@ -1,0 +1,56 @@
+The Nautilus DevOps team want to create a time check pod in a particular Kubernetes namespace and record the logs. 
+This might be initially used only for existing purposes, but later can be implemented in an existing cluster. 
+Please find more details below about the task and perform it.
+
+
+Create a pod called time-check in the nautilus namespace. 
+This pod should run a container called time-check container should use the busybox image with latest tag only 
+and remember to mention tag i.e busybox:latest.
+
+Create a config map called time-config with the data TIME_FREQ=4 in the same namespace, 
+and volume name should be log-volume.
+
+The time-check container should run the command: while true; do date; sleep $TIME_FREQ;done 
+and should write the result to the location /opt/dba/time/time-check.log.
+
+3.The path /opt/dba/time on the pod should mount a volume that lasts the lifetime of this pod.
+
+Note: The kubectl utility on jump_host has been configured to work with the kubernetes cluster.
+
+kubectl create ns nautilus
+
+vi configmap.yaml
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: time-config
+  namespace: nautilus
+data:
+  TIME_FREQ: '4'
+  
+
+vi pod.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: time-check
+  namespace: nautilus
+spec:
+  containers:
+    - name: time-check
+      image: busybox:latest
+      command: [ "/bin/sh", "-c", "while true; do date; sleep $(TIME_FREQ);done >> /opt/dba/time/time-check.log" ]
+      volumeMounts:
+      - name: log-volume
+        mountPath: /opt/dba/time
+  volumes:
+    - name: log-volume
+      configMap:
+        # Provide the name of the ConfigMap containing the files you want
+        # to add to the container
+        name: time-config
+  restartPolicy: Never
+  
+  
