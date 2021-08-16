@@ -1,0 +1,120 @@
+The Nautilus DevOps team want to deploy a PHP website on Kubernetes cluster.
+They are going to use Apache as a web server and Mysql for database.
+The team had already gathered the requirements and now they want to make this website live. Below you can find more details:
+
+
+
+1) Create a config map php-config for php.ini with variables_order = "EGPCS" data.
+
+2) Create a deployment named lamp-wp.
+
+3) Create two containers under it. First container must be httpd-php-container using image webdevops/php-apache:alpine-3-php7 and second container must be mysql-container from image mysql:5.6. Mount php-config configmap in httpd container at /opt/docker/etc/php/php.ini location.
+
+4) Create kubernetes generic secrets for mysql related values like myql root password, mysql user, mysql password, mysql host and mysql database. Set any values of your choice.
+
+5) Add some environment variables for both containers:
+
+a) MYSQL_ROOT_PASSWORD, MYSQL_DATABASE, MYSQL_USER, MYSQL_PASSWORD and MYSQL_HOST. Take their values from the secrets you created.
+
+6) Create a node port type service lamp-service to expose the web application, nodePort must be 30008.
+
+7) Create a service for mysql named mysql-service and its port must be 3306.
+
+8) We already have /tmp/index.php file on jump_host server.
+
+a) Copy this file into httpd container under Apache document root i.e /app and replace the dummy values for mysql related variables with the environment variables you have set for mysql related parameters. Please make sure you do not hard code the mysql related details in this file, you must use the environment variables to fetch those values.
+
+b) You must be able to access this index.php on node port 30008 at the end, please note that you should see Connected successfully message while accessing this page.
+
+Note:
+
+The kubectl utility on jump_host has been configured to work with the kubernetes cluster.
+
+
+cat lamp-service.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: lamp-service
+spec:
+  type: NodePort
+  selector:
+    app: lamp-wp-app
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30008
+
+cat mysql-service.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-service
+spec:
+  ports:
+  - port: 3306
+  selector:
+    app: lamp-wp-app
+
+cat php-config.yaml
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: php-config
+data:
+  variables_order: 'EGPCS'
+
+cat secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: k8s-secret
+type: Opaque
+data:
+  MYSQL_ROOT_PASSWORD: cm9vdF9wYXNzd29yZAo=
+  MYSQL_DATABASE: bXlzcWxfZGF0YWJhc2UK
+  MYSQL_USER: bXlzcWxfdXNlcgo=
+  MYSQL_PASSWORD: bXlzcWxfcGFzc3dvcmQK
+  MYSQL_HOST: bXlzcWxfaG9zdAo=
+
+cat lamp-wp.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lamp-wp
+spec:
+  selector:
+    matchLabels:
+      app: lamp-wp-app
+  replicas: 1
+  template:
+    metadata:
+      name: lamp-wp
+      labels:
+        app: lamp-wp-app
+    spec:
+      containers:
+      - name: httpd-php-container
+        image: webdevops/php-apache:alpine-3-php7
+        envFrom:
+        - configMapRef:
+            name: php-config
+        - secretRef:
+            name: k8s-secret
+        volumeMounts:
+        - name: php-volume
+          mountPath: /opt/docker/etc/php/php.ini
+        ports:
+        - containerPort: 80
+      - name: mysql-container
+        image: mysql:5.6
+        envFrom:
+        - secretRef:
+            name: k8s-secret
+      volumes:
+        - name: php-volume
+          emptyDir: {}
