@@ -54,9 +54,10 @@ metadata:
   name: mysql-service
 spec:
   ports:
-  - port: 3306
+    - port: 3306
   selector:
     app: lamp-wp-app
+  clusterIP: none
 
 cat php-config.yaml
 
@@ -68,6 +69,7 @@ data:
   variables_order: 'EGPCS'
 
 cat secret.yaml
+
 apiVersion: v1
 kind: Secret
 metadata:
@@ -100,21 +102,41 @@ spec:
       containers:
       - name: httpd-php-container
         image: webdevops/php-apache:alpine-3-php7
-        envFrom:
-        - configMapRef:
-            name: php-config
-        - secretRef:
-            name: k8s-secret
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: k8s-secret
+              key: MYSQL_ROOT_PASSWORD
+        - name: MYSQL_HOST
+          valueFrom:
+            secretKeyRef:
+              name: k8s-secret
+              key: MYSQL_HOST
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: k8s-secret
+              key: MYSQL_PASSWORD
         volumeMounts:
         - name: php-volume
-          mountPath: /opt/docker/etc/php/php.ini
+          mountPath: /opt/docker/etc/php/
         ports:
         - containerPort: 80
       - name: mysql-container
         image: mysql:5.6
-        envFrom:
-        - secretRef:
-            name: k8s-secret
+        ports:
+        - containerPort: 3306
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: k8s-secret
+              key: MYSQL_ROOT_PASSWORD
       volumes:
         - name: php-volume
-          emptyDir: {}
+          configMap:
+            name: php-config
+            items:
+            - key: variables_order
+              path: php.ini
