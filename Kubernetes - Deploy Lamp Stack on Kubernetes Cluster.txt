@@ -22,6 +22,23 @@ a) MYSQL_ROOT_PASSWORD, MYSQL_DATABASE, MYSQL_USER, MYSQL_PASSWORD and MYSQL_HOS
 
 8) We already have /tmp/index.php file on jump_host server.
 
+<?php
+$dbname = getenv('MYSQL_DATABASE');
+$dbuser = getenv('MYSQL_USER');
+$dbpass = getenv('MYSQL_PASSWORD');
+$dbhost = getenv('MYSQL_HOST');
+
+$connect = mysqli_connect($dbhost, $dbuser, $dbpass) or die("Unable to Connect to '$dbhost'");
+
+$test_query = "SHOW TABLES FROM $dbname";
+$result = mysqli_query($test_query);
+
+if ($result->connect_error) {
+   die("Connection failed: " . $conn->connect_error);
+}
+  echo "Connected successfully";
+
+
 a) Copy this file into httpd container under Apache document root i.e /app and replace the dummy values for mysql related variables with the environment variables you have set for mysql related parameters. Please make sure you do not hard code the mysql related details in this file, you must use the environment variables to fetch those values.
 
 b) You must be able to access this index.php on node port 30008 at the end, please note that you should see Connected successfully message while accessing this page.
@@ -29,7 +46,6 @@ b) You must be able to access this index.php on node port 30008 at the end, plea
 Note:
 
 The kubectl utility on jump_host has been configured to work with the kubernetes cluster.
-
 
 cat lamp-service.yaml
 
@@ -53,12 +69,11 @@ kind: Service
 metadata:
   name: mysql-service
 spec:
+  selector:
+    tier: mysql
   ports:
     - port: 3306
-  selector:
-    app: lamp-wp-app
-    tier: mysql
-  clusterIP: none
+  clusterIP: None
 
 cat php-config.yaml
 
@@ -67,7 +82,25 @@ kind: ConfigMap
 metadata:
   name: php-config
 data:
-  variables_order: 'EGPCS'
+  php.ini: |-
+    variables_order: "EGPCS"
+
+  index.php: |-
+    <?php
+    $dbname = getenv('MYSQL_DATABASE');
+    $dbuser = getenv('MYSQL_USER');
+    $dbpass = getenv('MYSQL_PASSWORD');
+    $dbhost = getenv('MYSQL_HOST');
+
+    $connect = mysqli_connect($dbhost, $dbuser, $dbpass) or die("Unable to Connect to '$dbhost'");
+
+    $test_query = "SHOW TABLES FROM $dbname";
+    $result = mysqli_query($test_query);
+
+    if ($result->connect_error) {
+       die("Connection failed: " . $conn->connect_error);
+    }
+    echo "Connected successfully";
 
 cat secret.yaml
 
@@ -77,11 +110,11 @@ metadata:
   name: k8s-secret
 type: Opaque
 data:
-  MYSQL_ROOT_PASSWORD: cm9vdAo=
-  MYSQL_DATABASE: bXlzcWwK
-  MYSQL_USER: ZGJ1c2VyCg==
-  MYSQL_PASSWORD: cGFzc3dvcmQK
-  MYSQL_HOST: bXlzcWwtY29udGFpbmVyCg==
+  MYSQL_ROOT_PASSWORD: cm9vdHJvb3Q=
+  MYSQL_DATABASE: bXlzcWw=
+  MYSQL_USER: YWRtaW4=
+  MYSQL_PASSWORD: YWRtaW5hZG1pbg==
+  MYSQL_HOST: bXlzcWwtc2VydmljZQ==
 
 cat lamp-wp.yaml
 
@@ -93,84 +126,43 @@ spec:
   selector:
     matchLabels:
       app: lamp-wp-app
+      tier: mysql
   replicas: 1
   template:
     metadata:
       name: lamp-wp
       labels:
         app: lamp-wp-app
+        tier: mysql
     spec:
       containers:
       - name: httpd-php-container
         image: webdevops/php-apache:alpine-3-php7
-        env:
-            - name: MYSQL_ROOT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: k8s-secret
-                  key: MYSQL_ROOT_PASSWORD
-            - name: MYSQL_HOST
-              valueFrom:
-                secretKeyRef:
-                  name: k8s-secret
-                  key: MYSQL_HOST
-            - name: MYSQL_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: k8s-secret
-                  key: MYSQL_PASSWORD
-            - name: MYSQL_DATABASE
-              valueFrom:
-                secretKeyRef:
-                  name: k8s-secret
-                  key: MYSQL_DATABSE
-            - name: MYSQL_USER
-              valueFrom:
-                secretKeyRef:
-                  name: k8s-secret
-                  key: MYSQL_USER
-        volumeMounts:
-        - name: php-volume
-          mountPath: /opt/docker/etc/php/
         ports:
         - containerPort: 80
+        envFrom:
+        - secretRef:
+            name: k8s-secret
+        volumeMounts:
+        - name: php-volume
+          mountPath: /opt/docker/etc/php/php.ini
+          subPath: php.ini
+        - name: php-volume
+          mountPath: /app/index.php
+          subPath: index.php
       - name: mysql-container
         image: mysql:5.6
         volumeMounts:
-          - name: mysql
-            mountPath: /var/lib/mysql
-        env:
-            - name: MYSQL_ROOT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: k8s-secret
-                  key: MYSQL_ROOT_PASSWORD
-            - name: MYSQL_HOST
-              valueFrom:
-                secretKeyRef:
-                  name: k8s-secret
-                  key: MYSQL_HOST
-            - name: MYSQL_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: k8s-secret
-                  key: MYSQL_PASSWORD
-            - name: MYSQL_DATABASE
-              valueFrom:
-                secretKeyRef:
-                  name: k8s-secret
-                  key: MYSQL_DATABSE
-            - name: MYSQL_USER
-              valueFrom:
-                secretKeyRef:
-                  name: k8s-secret
-                  key: MYSQL_USER
-      volumes:
         - name: mysql
-          emptyDir: {}
-        - name: php-volume
-          configMap:
-            name: php-config
-            items:
-            - key: variables_order
-              path: php.ini
+          mountPath: /var/lib/mysql
+        ports:
+        - containerPort: 3306
+        envFrom:
+        - secretRef:
+            name: k8s-secret
+      volumes:
+      - name: php-volume
+        configMap:
+          name: php-config
+      - name: mysql
+        emptyDir: {}
