@@ -28,25 +28,30 @@ Note: Validation will try to run the playbook using command ansible-playbook -i 
     yum:
       name: httpd
       state: latest
+
   - name: Installing php
     yum:
       name: php
       state: latest
+
   - name: Changing apache document root
     lineinfile:
       path: /etc/httpd/conf/httpd.conf
       regexp: 'DocumentRoot "/var/www/html"'
       line: DocumentRoot "/var/www/html/myroot"
+
   - name: Creating myroot directory
     file:
       path: /var/www/html/myroot
       state: directory
+
   - name: Template a php file
     template:
       src: ~/playbooks/templates/phpinfo.php.j2
       dest: /var/www/html/myroot/phpinfo.php
       owner: apache
       group: apache
+
   - name: Starting and enabling httpd
     service:
       name: httpd
