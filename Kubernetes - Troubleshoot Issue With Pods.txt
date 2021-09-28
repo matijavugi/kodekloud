@@ -10,3 +10,11 @@ There is a sidecar container as well named sidecar-container which is using ubun
 Look into the issue and fix it, make sure pod is in running state and you are able to access the app.
 
 Note: The kubectl utility on jump_host has been configured to work with the kubernetes cluster.
+
+kubectl tail -f webserver -c httpd-container
+
+see that it can not pull the image
+
+kubectl edit pod/webserver
+
+see that image is misspelled, correct it and it will work
