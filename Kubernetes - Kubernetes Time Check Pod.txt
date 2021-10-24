@@ -44,7 +44,7 @@ spec:
       command: [ "/bin/sh", "-c", "while true; do date; sleep $(TIME_FREQ);done >> /opt/security/time/time-check.log" ]
       envFrom:
       - configMapRef:
-        name: time-config
+          name: time-config
       volumeMounts:
       - name: log-volume
         mountPath: /opt/security/time
