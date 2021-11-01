@@ -72,7 +72,6 @@ spec:
       - name: nginx-config-volume
         mountPath: /etc/nginx/nginx.conf
         subPath: nginx.conf
-
   - name: php-fpm-container
     image: php:7.2-fpm
     volumeMounts:
