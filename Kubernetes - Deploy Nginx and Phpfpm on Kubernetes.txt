@@ -42,8 +42,8 @@ data:
       server {
           listen       8095;
           server_name  localhost;
-          location /var/www/html {
-            root   html;
+          location / {
+            root   /var/www/html;
             index  index.html index.htm index.php;
         }
       }
