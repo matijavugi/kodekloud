@@ -1,6 +1,8 @@
 The Nautilus Application team is planning to deploy one of the php-based application on Kubernetes cluster. As per discussion with DevOps team they decided to use nginx and phpfpm. Additionally, they shared some custom configuration requirements. Below you can find more details. Please complete the task as per requirements mentioned below:
 
 
+Create a service to expose this app, the service type must be NodePort, nodePort should be 30012.
+
 1.) Create a config map nginx-config for nginx.conf as we want to add some custom settings for nginx.conf.
 
 a) Change default port 80 to 8098 in nginx.conf.
@@ -40,7 +42,7 @@ data:
     }
     http {
       server {
-          listen       8095;
+          listen       8098;
           server_name  localhost;
           location / {
             root   /var/www/html;
@@ -65,6 +67,8 @@ spec:
     emptyDir: {}
   containers:
   - name: nginx-container
+    ports:
+        - containerPort: 8098
     image: nginx:latest
     volumeMounts:
       - name: shared-files
@@ -73,7 +77,7 @@ spec:
         mountPath: /etc/nginx/nginx.conf
         subPath: nginx.conf
   - name: php-fpm-container
-    image: php:7.2-fpm
+    image: php:7.1-fpm
     volumeMounts:
       - name: shared-files
         mountPath: /var/www/html
@@ -90,7 +94,7 @@ spec:
     app: nginx-phpfpm
   type: NodePort
   ports:
-  - port: 80
+  - port: 8098
     protocol: TCP
-    targetPort: 8099
+    targetPort: 8098
     nodePort: 30012
