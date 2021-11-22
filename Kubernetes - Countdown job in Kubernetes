@@ -22,6 +22,8 @@ metadata:
   name: countdown-datacenter
 spec:
   template:
+    metadata:
+      name: countdown-datacenter
     spec:
       containers:
       - name: container-countdown-datacenter
