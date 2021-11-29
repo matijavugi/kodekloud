@@ -54,3 +54,6 @@ so please make sure the playbook works this way without passing any extra argume
       group: "{{ ansible_user }}"
       mode: 0744
     when: ansible_eth0.ipv4.address == "172.16.238.12"
+
+
+ansible all -i inventory -a 'ls -l /opt/data'
