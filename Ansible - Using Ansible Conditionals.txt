@@ -35,6 +35,7 @@ so please make sure the playbook works this way without passing any extra argume
       src: /usr/src/sysops/blog.txt
       dest: /opt/sysops/blog.txt
       owner: "{{ ansible_user }}"
+      group: "{{ ansible_user }}"
       mode: 0744
     when:  ansible_eth0.ipv4.address == "172.16.238.10"
   - name: Copying story.txt
@@ -42,6 +43,7 @@ so please make sure the playbook works this way without passing any extra argume
       src: /usr/src/sysops/story.txt
       dest: /opt/sysops/story.txt
       owner: "{{ ansible_user }}"
+      group: "{{ ansible_user }}"
       mode: 0744
     when: ansible_eth0.ipv4.address == "172.16.238.11"
   - name: Copying media.txt
@@ -49,5 +51,6 @@ so please make sure the playbook works this way without passing any extra argume
       src: /usr/src/sysops/media.txt
       dest: /opt/sysops/media.txt
       owner: "{{ ansible_user }}"
+      group: "{{ ansible_user }}"
       mode: 0744
     when: ansible_eth0.ipv4.address == "172.16.238.12"
