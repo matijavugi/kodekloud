@@ -29,14 +29,14 @@ metadata:
   name: print-envars-greeting
 spec:
   containers:
-  - name: print-envars-greeting
+  - name: print-env-container
     image: bash:latest
     env:
     - name: GREETING
       value: "Welcome to"
     - name: COMPANY
-      value: "Nautilus"
+      value: "Stratos"
     - name: GROUP
-      value: "Group"
+      value: "Ltd"
     command: ["echo"]
     args: ["$(GREETING) $(COMPANY) $(GROUP)"]
