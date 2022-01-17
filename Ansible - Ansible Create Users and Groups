@@ -35,13 +35,22 @@ without passing any extra arguments.
   hosts: stapp01
   become: yes
   gather_facts: false
+  vars:
+    - users: "{{ lookup('file','/data/users.yml) | from_json }}"
 
   tasks:
-  - name: Ensure group "somegroup" exists
+  - name: Ensure groups admin and developers exists
     group:
       name: "{{ item }}"
       state: present
     with_items:
       - admins
       - developers
+      
+  - name: Creating admin users
+    user:
+      name: "{{ item }}"
+      groups: admins, wheel
+      append: yes
+    with_items: users.admins
 
