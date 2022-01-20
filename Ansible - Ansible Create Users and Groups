@@ -30,13 +30,19 @@ Note: Validation will try to run the playbook using command ansible-playbook -i 
 without passing any extra arguments.
 
 
+ansible.cfg
+vault_password_file = secrets/vault.txt
+
+ansible-vault encrypt add_users.yml
+
 ---
 - name: Adding users as admins and developers
-  hosts: stapp01
+  hosts: stapp02
   become: yes
   gather_facts: false
   vars:
-    - users: "{{ lookup('file','/data/users.yml) | from_json }}"
+    - add_group: "{{ lookup('file','data/users.yml') | from_yaml | list}}"
+    - add_user: "{{ lookup('file','data/users.yml') | from_yaml }}"
 
   tasks:
   - name: Ensure groups admin and developers exists
@@ -44,13 +50,21 @@ without passing any extra arguments.
       name: "{{ item }}"
       state: present
     with_items:
-      - admins
-      - developers
-      
+      - "{{ add_group }}"
   - name: Creating admin users
     user:
       name: "{{ item }}"
+      password: "{{ 'Rc5C9EyvbU' | password_hash('sha512', 'mysecretsalt') }}"
       groups: admins, wheel
       append: yes
-    with_items: users.admins
-
+    with_items:
+      - "{{ add_user.admins }}"
+  - name: Creating developer users
+    user:
+      name: "{{ item }}"
+      password: "{{ 'Rc5C9EyvbU' | password_hash('sha512', 'mysecretsalt') }}"
+      groups: developers
+      append: yes
+      home: /var/www
+    with_items:
+      - "{{ add_user.developers }}"
