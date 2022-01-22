@@ -54,7 +54,7 @@ ansible-vault encrypt add_users.yml
   - name: Creating admin users
     user:
       name: "{{ item }}"
-      password: "{{ 'Rc5C9EyvbU' | password_hash('sha512', 'mysecretsalt') }}"
+      password: "{{ '8FmzjvFU6S' | password_hash('sha512', 'P@ss3or432') }}"
       groups: admins, wheel
       append: yes
     with_items:
@@ -62,9 +62,13 @@ ansible-vault encrypt add_users.yml
   - name: Creating developer users
     user:
       name: "{{ item }}"
-      password: "{{ 'Rc5C9EyvbU' | password_hash('sha512', 'mysecretsalt') }}"
+      password: "{{ '8FmzjvFU6S' | password_hash('sha512', 'P@ss3or432') }}"
       groups: developers
       append: yes
       home: /var/www
     with_items:
       - "{{ add_user.developers }}"
+  - name: Make sure that home dir can be created on www
+    file:
+      path: /var/www
+      mode: '0777'
