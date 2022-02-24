@@ -1,0 +1,33 @@
+Some new changes need to be made on some of the app servers in Stratos Datacenter. 
+There are some packages that need to be installed on the app server 3. 
+We want to install these packages using puppet only.
+
+
+
+Puppet master is already installed on Jump Server.
+
+Create a puppet programming file media.pp under /etc/puppetlabs/code/environments/production/manifests on master node 
+i.e on Jump Server and perform below mentioned tasks using the same.
+
+Define a class multi_package_node for agent node 3 i.e app server 3. 
+Install net-tools and unzip packages on the agent node 3.
+
+Notes: :- Please make sure to run the puppet agent test using sudo on agent nodes, 
+otherwise you can face certificate issues. 
+In that case you will have to clean the certificates first and then you will be able to run the puppet agent test.
+
+
+class multi_package_node {
+
+$multi_package = [ 'net-tools', 'unzip']
+
+    package { $multi_package: ensure => 'installed' }
+
+}
+
+
+
+node 'stapp03.stratos.xfusioncorp.com' {
+
+  include multi_package_node
+}
