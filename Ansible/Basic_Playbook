@@ -10,7 +10,7 @@ The playbook needs to be run on App Server 1 in Stratos DC, so inventory file ne
 
 Create a playbook /home/thor/ansible/playbook.yml and add a task to create an empty file /tmp/file.txt on App Server 1.
 
-----
+---
 - name: Creating new file
   hosts: all
   become: yes
