@@ -1,0 +1,21 @@
+A new teammate has joined the Nautilus application development team. 
+The application development team has asked the DevOps team to create a new user account for the new teammate on application server 3 in Stratos Datacenter.
+The task needs to be performed using Puppet only. 
+You can find more details below about the task.
+
+
+
+Create a Puppet programming file apps.pp under /etc/puppetlabs/code/environments/production/manifests directory on master node 
+and using Puppet user resource add a user on all app servers as mentioned below:
+
+Create a user anita and set its UID to 1995 on Puppet agent nodes 3 i.e App Servers 3.
+
+
+node 'stapp03.stratos.xfusioncorp.com' {
+user { 'anita':
+    ensure     => 'present',
+    comment    => 'Adding Anita',
+    uid        => '1995',
+    managehome => true,
+  }
+}
