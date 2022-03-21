@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
       - name: grafana
-        image: grafana:latest
+        image: grafana/grafana:latest
         ports:
         - containerPort: 3000
           protocol: TCP
