@@ -28,7 +28,7 @@ ii. Do not use any custom or empty marker for blockinfile module.
 ---
 - name: Installing httpd
   hosts: all
-  remote_user: root
+  become: yes
 
   tasks:
   - name: ensure apache is at the latest version
@@ -43,6 +43,12 @@ ii. Do not use any custom or empty marker for blockinfile module.
     service:
       name: httpd
       state: started
+  - file:
+      path: /var/www/html/index.html
+      state: touch
+      owner: apache
+      group: apache
+      mode: 0744
   - name: Adding text block
     blockinfile:
       path: /var/www/html/index.html
@@ -52,9 +58,3 @@ ii. Do not use any custom or empty marker for blockinfile module.
         This is Nautilus sample file, created using Ansible!
 
         Please do not modify this file manually!
-
-  - file:
-      path: /var/www/html/index.html
-      owner: apache
-      group: apache
-      mode: 0644
