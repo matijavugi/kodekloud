@@ -1,0 +1,25 @@
+class symlink {
+
+# Security to point to /var/www/html
+  file { '/opt/security':
+
+    ensure => 'link',
+
+    target => '/var/www/html',
+
+  }
+
+# Create a file
+  file { '/opt/security/media.txt':
+
+    ensure => 'present',
+
+  }
+
+}
+
+node 'stapp01.stratos.xfusioncorp.com', 'stapp02.stratos.xfusioncorp.com', 'stapp03.stratos.xfusioncorp.com' {
+
+  include symlink
+
+}
