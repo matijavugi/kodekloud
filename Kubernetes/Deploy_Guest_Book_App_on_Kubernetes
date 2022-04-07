@@ -56,113 +56,120 @@ You can use any labels as per your choice.
 Note: The kubectl utility on jump_host has been configured to work with the kubernetes cluster.
 
 
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: redis-master
+  labels:
+    tier: master-back-end
 spec:
+  replicas: 1
   selector:
     matchLabels:
-      app: redis-app
-  replicas: 1
+      tier: master-back-end
   template:
     metadata:
-      name: redis-master
       labels:
-        app: redis-app
+        tier: master-back-end
     spec:
       containers:
-      - image: redis:latest
-        name: master-redis-datacenter
+      - name: master-redis-xfusion
+        image: redis:latest
         resources:
           requests:
             memory: "100Mi"
             cpu: "100m"
         ports:
-        - containerPort: 6379
-        
+          - containerPort: 6379
 
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-master
+spec:
+  selector:
+    tier: master-back-end
+  ports:
+    - protocol: TCP
+      port: 6379
+      targetPort: 6379
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: redis-slave
+  labels:
+    tier: slave-back-end
 spec:
+  replicas: 2
   selector:
     matchLabels:
-      app: redis-slave-app
-  replicas: 2
+      tier: slave-back-end
   template:
     metadata:
-      name: redis-slave
       labels:
-        app: redis-slave-app
+        tier: slave-back-end
     spec:
       containers:
-      - image: gcr.io/google_samples/gb-redisslave:v3
-        name: slave-redis-datacenter
+      - name: slave-redis-xfusion
+        image: gcr.io/google_samples/gb-redisslave:v3
+        resources:
+          requests:
+            memory: "100Mi"
+            cpu: "100m"
         env:
         - name: GET_HOSTS_FROM
           value: "dns"
-        resources:
-          requests:
-            memory: "100Mi"
-            cpu: "100m"
         ports:
-        - containerPort: 6379
-    
-apiVersion: v1
-kind: Service
-metadata:
-  name: redis-master
-spec:
-  selector:
-    app: redis-app
-  ports:
-    - port: 6379
-      targetPort: 6379
-      
-      
+          - containerPort: 6379
+
+---
 apiVersion: v1
 kind: Service
 metadata:
   name: redis-slave
 spec:
   selector:
-    app: redis-slave-app
+    tier: slave-back-end
   ports:
-    - port: 6379
+    - protocol: TCP
+      port: 6379
       targetPort: 6379
-      
-      
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend
+  labels:
+    tier: frontend
 spec:
+  replicas: 3
   selector:
     matchLabels:
-      app: frontend-app
-  replicas: 3
+      tier: frontend
   template:
     metadata:
-      name: frontend
       labels:
-        app: frontend-app
+        tier: frontend
     spec:
       containers:
-      - image: gcr.io/google-samples/gb-frontend:v4
-        name: php-redis-datacenter
-        env:
-        - name: GET_HOSTS_FROM
-          value: "dns"
+      - name: php-redis-xfusion
+        image: gcr.io/google-samples/gb-frontend:v4
         resources:
           requests:
             memory: "100Mi"
             cpu: "100m"
+        env:
+          - name: GET_HOSTS_FROM
+            value: "dns"
         ports:
-        - containerPort: 80
-        
+          - containerPort: 80
 
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -170,9 +177,10 @@ metadata:
 spec:
   type: NodePort
   selector:
-    app: frontend-app
+    tier: frontend
   ports:
     - port: 80
       targetPort: 80
       nodePort: 30009
+
       
